@@ -1,9 +1,28 @@
 <template>
   <div class="container mx-auto flex flex-col items-center bg-gray-100 p-4">
-    <div v-if="loader" class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center">
-      <svg class="animate-spin -ml-1 mr-3 h-12 w-12 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <div
+      v-if="loader"
+      class="fixed w-100 h-100 opacity-80 bg-purple-800 inset-0 z-50 flex items-center justify-center"
+    >
+      <svg
+        class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
       </svg>
     </div>
     <div v-else class="container">
@@ -35,7 +54,7 @@
                 @click="addFromHelp(help)"
                 class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
               >
-                {{help}}
+                {{ help }}
               </span>
             </div>
             <div class="text-sm text-red-600" v-if="showValidMsg">
@@ -117,9 +136,9 @@
             class="bg-purple-800 border w-10"
           ></div>
         </div>
-        <button 
-          @click="closeGraph" 
-          type="button" 
+        <button
+          @click="closeGraph"
+          type="button"
           class="absolute top-0 right-0"
         >
           <svg
@@ -166,17 +185,19 @@ export default {
     };
   },
   async created() {
-    const f = await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')
+    const f = await fetch(
+      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
+    )
       .then(e => e.json())
-      .then(e => e.Data)
+      .then(e => e.Data);
     this.validationData = f;
     this.loader = false;
   },
   methods: {
     add() {
-      if(!this.validName) {
+      if (!this.validName) {
         this.showValidMsg = true;
-        return
+        return;
       }
       const currentTicker = {
         name: this.ticker,
@@ -190,10 +211,9 @@ export default {
           `https://min-api.cryptocompare.com/data/price?fsym=${currentTicker.name}&tsyms=USD`
         );
         const data = await f.json();
-        if(this.tickers.length) {
+        if (this.tickers.length) {
           this.tickers.find(e => e.name === currentTicker.name).price =
             data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
-
         }
         if (this.sel?.name === currentTicker.name) {
           this.graph.push(data.USD);
@@ -222,29 +242,32 @@ export default {
       this.sel = null;
     },
     valid(evt) {
-      this.autocomplite(evt.target.value)
+      this.autocomplite(evt.target.value);
 
-      if(this.tickers.find(e => e.name === evt.target.value)) {
-        this.validName = false
+      if (this.tickers.find(e => e.name === evt.target.value)) {
+        this.validName = false;
       } else {
-        this.validName = true
+        this.validName = true;
         this.showValidMsg = false;
       }
     },
     autocomplite(value) {
       let help = Object.keys(this.validationData).filter(e => {
-        if(e.toLowerCase().startsWith(value.toLowerCase())) {
-          return e
+        if (e.toLowerCase().startsWith(value.toLowerCase())) {
+          return e;
         }
-      })
-      if(!help) {
+      });
+      if (!help) {
         help = Object.values(this.validationData).filter(e => {
-        if(e.FullName.toLowerCase().startsWith(value.toLowerCase()) || e.Symbol.toLowerCase().startsWith(value.toLowerCase())) {
-          return e
-        }
-      }) 
+          if (
+            e.FullName.toLowerCase().startsWith(value.toLowerCase()) ||
+            e.Symbol.toLowerCase().startsWith(value.toLowerCase())
+          ) {
+            return e;
+          }
+        });
       }
-      this.helps = help.splice(0,4)
+      this.helps = help.splice(0, 4);
     },
     addFromHelp(e) {
       this.ticker = e;
