@@ -36,7 +36,7 @@
               <input
                 autocomplete="off"
                 v-model="ticker"
-                @input="isValid"
+                @input="autocomplite"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -57,7 +57,7 @@
                 {{ help }}
               </span>
             </div>
-            <div class="text-sm text-red-600" v-if="showValidMsg">
+            <div class="text-sm text-red-600" v-if="!validTickerName">
               Такой тикер уже добавлен
             </div>
           </div>
@@ -86,22 +86,22 @@
       <div v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
         <div>
-          <button 
-            @click="page =page-1"
+          <button
+            @click="page = page - 1"
             v-if="page > 1"
             class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             Назад
           </button>
-          
-          <button 
+
+          <button
             v-if="hasNextPage"
-            @click="page=page+1"
+            @click="page = page + 1"
             class="my-4 mx-2 inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
             Вперед
           </button>
-          Фильтр: <input v-model="filter" type="text">
+          Фильтр: <input v-model="filter" type="text" />
         </div>
         <hr class="w-full border-t border-gray-600 my-4" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -193,47 +193,52 @@ export default {
   data() {
     return {
       ticker: "",
+      filter: "",
+
       tickers: [],
       selectedTicker: null,
+
       graph: [],
+
+      page: 1,
+
       validationData: null,
-      loader: true,
-      validName: true,
-      showValidMsg: false,
+      validTickerName: true,
       helps: [],
-      filter: "",
-      page: 1
+
+      loader: true,
     };
   },
   async created() {
-    const windowData = Object.fromEntries(new URL(window.location).searchParams.entries());
+    const windowData = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
 
-    if(windowData.filter) {
+    if (windowData.filter) {
       this.filter = windowData.filter;
     }
 
-    if(windowData.page) {
+    if (windowData.page) {
       this.page = windowData.page;
     }
 
-    const tickersData = localStorage.getItem('cryptonomicon-list');
+    const tickersData = localStorage.getItem("cryptonomicon-list");
 
-    if(tickersData) {
-      this.tickers = JSON.parse(tickersData)
-      this.tickers.forEach(e => {
+    if (tickersData) {
+      this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((e) => {
         this.subscribeToUpdate(e.name);
-      }) 
+      });
     }
 
     const f = await fetch(
       "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
     )
-      .then(e => e.json())
-      .then(e => e.Data);
+      .then((e) => e.json())
+      .then((e) => e.Data);
     this.validationData = f;
 
     this.loader = false;
-
   },
   computed: {
     startIndex() {
@@ -245,7 +250,7 @@ export default {
     },
 
     filteredTickers() {
-      return this.tickers.filter( e => e.name.includes(this.filter) )
+      return this.tickers.filter((e) => e.name.includes(this.filter));
     },
 
     paginatedTickers() {
@@ -260,21 +265,21 @@ export default {
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
 
-      if(maxValue === minValue) {
+      if (maxValue === minValue) {
         return this.graph.map(() => 50);
       }
 
       return this.graph.map(
-        e => 5 + ((e - minValue) * 95) / (maxValue - minValue)
+        (e) => 5 + ((e - minValue) * 95) / (maxValue - minValue)
       );
     },
 
     pageStateOptions() {
       return {
         filter: this.filter,
-        page: this.page
-      }
-    }
+        page: this.page,
+      };
+    },
   },
   methods: {
     subscribeToUpdate(tickerName) {
@@ -283,7 +288,7 @@ export default {
           `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=USD`
         );
         const data = await f.json();
-        this.tickers.find(e => e.name === tickerName).price =
+        this.tickers.find((e) => e.name === tickerName).price =
           data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
 
         if (this.selectedTicker?.name === tickerName) {
@@ -295,81 +300,71 @@ export default {
     },
 
     add() {
-      if (!this.validName) {
-        this.showValidMsg = true;
+      if (this.tickers.filter((e) => e.name === this.ticker)) {
+        this.validTickerName = false;
         return;
       }
+
       const currentTicker = {
         name: this.ticker,
-        price: 0
+        price: 0,
       };
 
       this.tickers = [...this.tickers, currentTicker];
-      this.filter = '';
+      this.filter = "";
 
-      this.subscribeToUpdate(currentTicker.name)
+      this.subscribeToUpdate(currentTicker.name);
     },
 
     select(t) {
-      this.selectedTicker = t
+      this.selectedTicker = t;
     },
 
     remove(t) {
-      this.tickers = this.tickers.filter(e => e !== t);
+      this.tickers = this.tickers.filter((e) => e !== t);
 
-      if(this.selectedTicker === t) {
+      if (this.selectedTicker === t) {
         this.selectedTicker = null;
       }
     },
 
-    isValid(evt) {
-      this.autocomplite(evt.target.value);
+    autocomplite(evt) {
+      this.validTickerName = true;
 
-      if (this.tickers.find(e => e.name === evt.target.value)) {
-        this.validName = false;
-      } else {
-        this.validName = true;
-        this.showValidMsg = false;
-      }
-    },
+      let helpTickerKeys = [];
 
-    autocomplite(value) {
-      let help = Object.keys(this.validationData).filter(e => {
-        if (e.toLowerCase().startsWith(value.toLowerCase())) {
-          return e;
+      for (const [key, value] of Object.entries(this.validationData)) {
+        if (
+          key.toLowerCase().startsWith(evt.target.value.toLowerCase()) ||
+          value.FullName.toLowerCase().startsWith(
+            evt.target.value.toLowerCase()
+          ) ||
+          value.Symbol.toLowerCase().startsWith(evt.target.value.toLowerCase())
+        ) {
+          helpTickerKeys.push(key);
         }
-      });
-      if (!help) {
-        help = Object.values(this.validationData).filter(e => {
-          if (
-            e.FullName.toLowerCase().startsWith(value.toLowerCase()) ||
-            e.Symbol.toLowerCase().startsWith(value.toLowerCase())
-          ) {
-            return e;
-          }
-        });
       }
-      this.helps = help.splice(0, 4);
+
+      this.helps = helpTickerKeys.slice(0, 4);
     },
 
     addFromHelp(e) {
       this.ticker = e;
-      this.isValid({target: {value: e}});
       this.add();
-    }
+    },
   },
   watch: {
     tickers() {
-      localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers))
+      localStorage.setItem("cryptonomicon-list", JSON.stringify(this.tickers));
     },
 
     selectedTicker() {
-      this.graph = []
+      this.graph = [];
     },
 
     paginatedTickers() {
-      if(this.paginatedTickers.length === 0 && this.page > 1) {
-        this.page -=1
+      if (this.paginatedTickers.length === 0 && this.page > 1) {
+        this.page -= 1;
       }
     },
 
@@ -377,13 +372,13 @@ export default {
       this.page = 1;
     },
 
-     pageStateOptions(value) {
-       window.history.pushState(
-        null, 
-        document.title, 
+    pageStateOptions(value) {
+      window.history.pushState(
+        null,
+        document.title,
         `${window.location.pathname}?filter=${value.filter}&page=${value.page}`
-      )
-     }
-  }
+      );
+    },
+  },
 };
 </script>
