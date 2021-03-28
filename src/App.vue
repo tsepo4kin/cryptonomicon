@@ -36,7 +36,7 @@
               <input
                 autocomplete="off"
                 v-model="ticker"
-                @input="valid"
+                @input="isValid"
                 type="text"
                 name="wallet"
                 id="wallet"
@@ -107,10 +107,10 @@
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
-            v-for="t in filteredTickers()"
+            v-for="t in paginatedTickers"
             :key="t.name"
-            @click="selectTicker(t)"
-            :class="sel === t ? 'border-4' : ''"
+            @click="select(t)"
+            :class="selectedTicker === t ? 'border-4' : ''"
           >
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
@@ -143,20 +143,20 @@
         </dl>
         <hr class="w-full border-t border-gray-600 my-4" />
       </div>
-      <section class="relative" v-if="sel">
+      <section class="relative" v-if="selectedTicker">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ sel.name }}
+          {{ selectedTicker.name }}
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, i) in normalizeGraph()"
+            v-for="(bar, i) in normalizedGraph"
             :key="i"
             :style="{ height: `${bar}%` }"
             class="bg-purple-800 border w-10"
           ></div>
         </div>
         <button
-          @click="closeGraph"
+          @click="selectedTicker = null"
           type="button"
           class="absolute top-0 right-0"
         >
@@ -194,7 +194,7 @@ export default {
     return {
       ticker: "",
       tickers: [],
-      sel: null,
+      selectedTicker: null,
       graph: [],
       validationData: null,
       loader: true,
@@ -202,8 +202,7 @@ export default {
       showValidMsg: false,
       helps: [],
       filter: "",
-      page: 1,
-      hasNextPage: true
+      page: 1
     };
   },
   async created() {
@@ -217,6 +216,15 @@ export default {
       this.page = windowData.page;
     }
 
+    const tickersData = localStorage.getItem('cryptonomicon-list');
+
+    if(tickersData) {
+      this.tickers = JSON.parse(tickersData)
+      this.tickers.forEach(e => {
+        this.subscribeToUpdate(e.name);
+      }) 
+    }
+
     const f = await fetch(
       "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
     )
@@ -224,27 +232,51 @@ export default {
       .then(e => e.Data);
     this.validationData = f;
 
-    const tickersData = localStorage.getItem('cryptonomicon-list');
-    if(tickersData) {
-      this.tickers = JSON.parse(tickersData)
-      this.tickers.forEach(e => {
-        this.subscribeToUpdate(e.name);
-
-      }) 
-    }
-
     this.loader = false;
 
   },
-  methods: {
-    filteredTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-      const filteredTickers = this.tickers.filter( e => e.name.includes(this.filter) );
-      
-      this.hasNextPage = filteredTickers.length > end;
-      return filteredTickers.slice(start, end);
+  computed: {
+    startIndex() {
+      return (this.page - 1) * 6;
     },
+
+    endIndex() {
+      return this.page * 6;
+    },
+
+    filteredTickers() {
+      return this.tickers.filter( e => e.name.includes(this.filter) )
+    },
+
+    paginatedTickers() {
+      return this.filteredTickers.slice(this.startIndex, this.endIndex);
+    },
+
+    hasNextPage() {
+      return this.filteredTickers.length > this.endIndex;
+    },
+
+    normalizedGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+
+      if(maxValue === minValue) {
+        return this.graph.map(() => 50);
+      }
+
+      return this.graph.map(
+        e => 5 + ((e - minValue) * 95) / (maxValue - minValue)
+      );
+    },
+
+    pageStateOptions() {
+      return {
+        filter: this.filter,
+        page: this.page
+      }
+    }
+  },
+  methods: {
     subscribeToUpdate(tickerName) {
       setInterval(async () => {
         const f = await fetch(
@@ -254,13 +286,14 @@ export default {
         this.tickers.find(e => e.name === tickerName).price =
           data.USD > 1 ? data.USD.toFixed(2) : data.USD.toPrecision(2);
 
-        if (this.sel?.name === tickerName) {
+        if (this.selectedTicker?.name === tickerName) {
           this.graph.push(data.USD);
         }
       }, 3000);
 
       this.ticker = "";
     },
+
     add() {
       if (!this.validName) {
         this.showValidMsg = true;
@@ -271,33 +304,25 @@ export default {
         price: 0
       };
 
-      this.tickers.push(currentTicker);
+      this.tickers = [...this.tickers, currentTicker];
       this.filter = '';
 
-      localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers))
       this.subscribeToUpdate(currentTicker.name)
+    },
+
+    select(t) {
+      this.selectedTicker = t
     },
 
     remove(t) {
       this.tickers = this.tickers.filter(e => e !== t);
-      localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers))
+
+      if(this.selectedTicker === t) {
+        this.selectedTicker = null;
+      }
     },
 
-    normalizeGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-      return this.graph.map(
-        e => 5 + ((e - minValue) * 95) / (maxValue - minValue)
-      );
-    },
-    selectTicker(ticker) {
-      this.sel = ticker;
-      this.graph = [];
-    },
-    closeGraph() {
-      this.sel = null;
-    },
-    valid(evt) {
+    isValid(evt) {
       this.autocomplite(evt.target.value);
 
       if (this.tickers.find(e => e.name === evt.target.value)) {
@@ -307,6 +332,7 @@ export default {
         this.showValidMsg = false;
       }
     },
+
     autocomplite(value) {
       let help = Object.keys(this.validationData).filter(e => {
         if (e.toLowerCase().startsWith(value.toLowerCase())) {
@@ -325,27 +351,37 @@ export default {
       }
       this.helps = help.splice(0, 4);
     },
+
     addFromHelp(e) {
       this.ticker = e;
-      this.valid({target: {value: e}});
+      this.isValid({target: {value: e}});
       this.add();
     }
   },
   watch: {
+    tickers() {
+      localStorage.setItem('cryptonomicon-list', JSON.stringify(this.tickers))
+    },
+
+    selectedTicker() {
+      this.graph = []
+    },
+
+    paginatedTickers() {
+      if(this.paginatedTickers.length === 0 && this.page > 1) {
+        this.page -=1
+      }
+    },
+
     filter() {
       this.page = 1;
-
-      window.history.pushState(
-        null, 
-        document.title, 
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
-      )
     },
-     page() {
+
+     pageStateOptions(value) {
        window.history.pushState(
         null, 
         document.title, 
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+        `${window.location.pathname}?filter=${value.filter}&page=${value.page}`
       )
      }
   }
