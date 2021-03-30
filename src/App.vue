@@ -110,7 +110,10 @@
             v-for="t in paginatedTickers"
             :key="t.name"
             @click="select(t)"
-            :class="selectedTicker === t ? 'border-4' : ''"
+            :class="{
+              'border-4': selectedTicker === t,
+              'bg-red-100': t.price === '-',
+            }"
           >
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
@@ -188,7 +191,11 @@
 </template>
 
 <script>
-import { loadValidTickers, subscribeToTicker, unsubscribeFromTicker } from "./api";
+import {
+  loadValidTickers,
+  subscribeToTicker,
+  unsubscribeFromTicker,
+} from "./api";
 
 export default {
   name: "App",
@@ -332,6 +339,9 @@ export default {
     },
 
     select(t) {
+      if (t.price === "-") {
+        return;
+      }
       this.selectedTicker = t;
     },
 

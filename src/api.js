@@ -7,11 +7,22 @@ const socket = new WebSocket(
 );
 
 const AGGREGATE_INDEX = "5";
+const INVALID_INDEX = "500";
 
 socket.addEventListener("message", (e) => {
-  const { TYPE: type, FROMSYMBOL: currency, PRICE: newPrice } = JSON.parse(
-    e.data
-  );
+  const {
+    TYPE: type,
+    FROMSYMBOL: currency,
+    PRICE: newPrice,
+    PARAMETER: param,
+  } = JSON.parse(e.data);
+
+  if (type === INVALID_INDEX) {
+    const unvalidTickerName = param.split("~")[2];
+    const handlers = tickersHandlers.get(unvalidTickerName) ?? [];
+    handlers.forEach((fn) => fn("-"));
+    return;
+  }
 
   if (type !== AGGREGATE_INDEX || newPrice === undefined) {
     return;
