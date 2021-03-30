@@ -188,7 +188,7 @@
 </template>
 
 <script>
-import { subscribeToTicker, unsubscribeFromTicker } from './api'
+import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 
 export default {
   name: "App",
@@ -226,10 +226,10 @@ export default {
 
     const tickersData = localStorage.getItem("cryptonomicon-list");
 
-    if(tickersData) {
+    if (tickersData) {
       this.tickers = JSON.parse(tickersData);
-      this.tickers.forEach(ticker => {
-        subscribeToTicker(ticker.name, newPrice => 
+      this.tickers.forEach((ticker) => {
+        subscribeToTicker(ticker.name, (newPrice) =>
           this.updateTicker(ticker.name, newPrice)
         );
       });
@@ -246,7 +246,7 @@ export default {
 
     this.loader = false;
   },
-  
+
   computed: {
     startIndex() {
       return (this.page - 1) * 6;
@@ -291,35 +291,36 @@ export default {
   methods: {
     updateTicker(tickerName, price) {
       this.tickers
-        .filter(t => t.name === tickerName)
-        .forEach(t => {
+        .filter((t) => t.name === tickerName)
+        .forEach((t) => {
+          if (t === this.selectedTicker) {
+            this.graph.push(price);
+          }
           t.price = price;
         });
     },
 
     formatPrice(price) {
-      if(price === '-') {
+      if (price === "-") {
         return price;
       }
 
-      return price > 1 
-          ? price.toFixed(2) 
-          : price.toPrecision(2)
+      return price > 1 ? price.toFixed(2) : price.toPrecision(2);
     },
-    
+
     isValidName(name) {
       let valid = true;
-      this.tickers.forEach(e => {
-        if(e.name === name) {
+      this.tickers.forEach((e) => {
+        if (e.name === name) {
           this.validTickerName = false;
           valid = false;
         }
-      })
+      });
       return valid;
     },
 
     add() {
-      if(!this.isValidName(this.ticker)) {
+      if (!this.isValidName(this.ticker)) {
         this.validTickerName = false;
         return;
       }
@@ -332,9 +333,9 @@ export default {
       this.tickers = [...this.tickers, currentTicker];
       this.ticker = "";
       this.filter = "";
-      subscribeToTicker(currentTicker.name, newPrice => 
+      subscribeToTicker(currentTicker.name, (newPrice) =>
         this.updateTicker(currentTicker.name, newPrice)
-      )
+      );
     },
 
     select(t) {
@@ -346,8 +347,7 @@ export default {
       if (this.selectedTicker === t) {
         this.selectedTicker = null;
       }
-      unsubscribeFromTicker(t.name)
-
+      unsubscribeFromTicker(t.name);
     },
 
     autocomplite(evt) {
