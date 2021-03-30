@@ -188,7 +188,7 @@
 </template>
 
 <script>
-import { subscribeToTicker, unsubscribeFromTicker } from "./api";
+import { loadValidTickers, subscribeToTicker, unsubscribeFromTicker } from "./api";
 
 export default {
   name: "App",
@@ -235,14 +235,7 @@ export default {
       });
     }
 
-    setInterval(this.updateTickers, 3000);
-
-    const f = await fetch(
-      "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
-    )
-      .then((e) => e.json())
-      .then((e) => e.Data);
-    this.validationData = f;
+    this.validationData = await loadValidTickers();
 
     this.loader = false;
   },
