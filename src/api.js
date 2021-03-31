@@ -6,6 +6,8 @@ const socket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`
 );
 
+let validTickersNames = null;
+
 const AGGREGATE_INDEX = "5";
 const INVALID_INDEX = "500";
 
@@ -15,12 +17,19 @@ socket.addEventListener("message", (e) => {
     FROMSYMBOL: currency,
     PRICE: newPrice,
     PARAMETER: param,
+    INFO: info
   } = JSON.parse(e.data);
 
   if (type === INVALID_INDEX) {
     const unvalidTickerName = param.split("~")[2];
-    const handlers = tickersHandlers.get(unvalidTickerName) ?? [];
-    handlers.forEach((fn) => fn("-"));
+
+    if(info.includes('All symbols are uppercase only') || !validTickersNames.find(t => t === unvalidTickerName)) {
+
+      const handlers = tickersHandlers.get(unvalidTickerName) ?? [];
+      handlers.forEach((fn) => fn("-"));
+    } else {
+      console.log(`need crosscourse for: ${unvalidTickerName}`)
+    }
     return;
   }
 
@@ -72,11 +81,12 @@ export const unsubscribeFromTicker = (ticker) => {
   unsubscribeFromTickerOnWs(ticker);
 };
 
-export function loadValidTickers() {
-  const f = fetch(
+export async function loadValidTickers() {
+  const f = await fetch(
     "https://min-api.cryptocompare.com/data/all/coinlist?summary=true"
   )
     .then((e) => e.json())
     .then((e) => e.Data);
+  validTickersNames = Object.keys(f);
   return f;
 }
