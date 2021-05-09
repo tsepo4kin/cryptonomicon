@@ -70,6 +70,15 @@ function unsubscribeFromTickerOnWs(ticker) {
   });
 }
 
+
+
+// function unsubscribeFromBTC(ticker) {
+//   sendToWebSocket({
+//     action: "SubRemove",
+//     subs: [`5~CCCAGG~${ticker}~BTC`],
+//   });
+// }
+
 export const subscribeToTicker = (ticker, cb) => {
   const subscribers = tickersHandlers.get(ticker) || [];
   tickersHandlers.set(ticker, [...subscribers, cb]);
