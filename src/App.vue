@@ -27,7 +27,7 @@
     </div>
     <div v-else class="container">
 
-      <add-ticker :validationData='validationData' @add-ticker='add' :disabled='tooManyTickersAdded'/>
+      <add-ticker @view-autocomlete='sortHelpTickers' :helps='helps' :validTickerName='validTickerName' @add-ticker='add' :disabled='tooManyTickersAdded'/>
 
       <div v-if="tickers.length">
         <hr class="w-full border-t border-gray-600 my-4" />
@@ -273,6 +273,37 @@ export default {
           }
           t.price = price;
         });
+    },
+
+    sortHelpTickers(evt) {
+      this.validTickerName = true;
+
+      let helpTickerKeys = [];
+
+      for (const [key, value] of Object.entries(this.validationData)) {
+        if (
+          key.toLowerCase().startsWith(evt.toLowerCase()) ||
+          value.FullName.toLowerCase().startsWith(
+            evt.toLowerCase()
+          ) ||
+          value.Symbol.toLowerCase().startsWith(evt.toLowerCase())
+        ) {
+          helpTickerKeys.push(key);
+        }
+      }
+
+      this.helps = helpTickerKeys.slice(0, 4);
+    },
+
+    isValidName(name) {
+      let valid = true;
+      this.tickers.forEach((e) => {
+        if (e.name === name) {
+          this.validTickerName = false;
+          valid = false;
+        }
+      });
+      return valid;
     },
 
     formatPrice(price) {

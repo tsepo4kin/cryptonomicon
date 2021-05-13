@@ -23,8 +23,8 @@
           class="flex bg-white shadow-md p-1 rounded-md shadow-md flex-wrap"
         >
           <span
-            v-for="(help, i) in helps"
-            :key="i"
+            v-for="help in helps"
+            :key="help"
             @click="addFromHelp(help)"
             class="inline-flex items-center px-2 m-1 rounded-md text-xs font-medium bg-gray-300 text-gray-800 cursor-pointer"
           >
@@ -36,7 +36,7 @@
         </div>
       </div>
     </div>
-    <add-button @click="add" type='button' :disabled="disabled" class="my-4" />
+    <add-button @click="add" type="button" :disabled="disabled" class="my-4" />
   </section>
 </template>
 
@@ -44,17 +44,23 @@
 import AddButton from "./AddButton";
 export default {
   props: {
-    validationData: {
-      require: true
+    helps: {
+      require: true,
+      default: false
     },
     disabled: {
       type: Boolean,
       require: false,
-      default: false
+      default: false,
+    },
+    validTickerName: {
+      type: Boolean,
+      require: true
     }
   },
   emits: {
-    'add-ticker': value => typeof value === 'string' && value.length > 0
+    "add-ticker": (value) => typeof value === "string" && value.length > 0,
+    "view-autocomlete": (value) => typeof value === "string" && value.length > 0
   },
 
   components: {
@@ -62,14 +68,15 @@ export default {
   },
   data() {
     return {
-      ticker: '',
-      validTickerName: true,
-      helps: [],
-    }
+      ticker: ""
+    };
   },
   methods: {
     add() {
-      this.$emit('add-ticker', this.ticker)
+      if(this.disabled) {
+        return
+      }
+      this.$emit("add-ticker", this.ticker);
       this.ticker = "";
     },
 
@@ -79,35 +86,8 @@ export default {
     },
 
     autocomplite(evt) {
-      this.validTickerName = true;
-
-      let helpTickerKeys = [];
-
-      for (const [key, value] of Object.entries(this.validationData)) {
-        if (
-          key.toLowerCase().startsWith(evt.target.value.toLowerCase()) ||
-          value.FullName.toLowerCase().startsWith(
-            evt.target.value.toLowerCase()
-          ) ||
-          value.Symbol.toLowerCase().startsWith(evt.target.value.toLowerCase())
-        ) {
-          helpTickerKeys.push(key);
-        }
-      }
-
-      this.helps = helpTickerKeys.slice(0, 4);
+      this.$emit("view-autocomlete", evt.target.value);
     },
-
-    isValidName(name) {
-      let valid = true;
-      this.tickers.forEach((e) => {
-        if (e.name === name) {
-          this.validTickerName = false;
-          valid = false;
-        }
-      });
-      return valid;
-    },
-  }
+  },
 };
 </script>
