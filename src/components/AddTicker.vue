@@ -9,6 +9,7 @@
           <input
             autocomplete="off"
             v-model="ticker"
+            @keydown.enter="add"
             @input="autocomplite"
             type="text"
             name="wallet"
