@@ -80,9 +80,15 @@ export default {
         return this.graph.map(() => 50);
       }
 
-      return this.graph.map(
+      let res = this.graph.map(
         (e) => 5 + ((e - minValue) * 95) / (maxValue - minValue)
       );
+
+      while (res.length > this.maxGraphElements) {
+        res.shift();
+      }
+      
+      return res
     },
   },
 
@@ -96,7 +102,7 @@ export default {
     if (!this.$refs.graph) {
       return;
     }
-    this.$emit('max-graph-elements', this.$refs.graph.clientWidth / 38);
+    console.log(this.$refs.graph.clientWidth / 38);
   },
 };
 </script>

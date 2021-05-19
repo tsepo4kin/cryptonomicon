@@ -101,7 +101,6 @@
         v-if="selectedTicker"
         :selectedTicker="selectedTicker"
         @clear-selected-ticker="selectedTicker = null"
-        @max-graph-elements='selectedTicker'
         :graph='graph'
       />
     </div>
@@ -212,9 +211,6 @@ export default {
         .forEach((t) => {
           if (t === this.selectedTicker) {
             this.graph.push(price);
-            while (this.graph.length > this.maxGraphElements) {
-              this.graph.shift();
-            }
           }
           t.price = price;
         });
