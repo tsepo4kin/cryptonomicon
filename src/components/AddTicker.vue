@@ -46,7 +46,7 @@ export default {
   props: {
     helps: {
       require: true,
-      default: false
+      default: false,
     },
     disabled: {
       type: Boolean,
@@ -55,12 +55,13 @@ export default {
     },
     validTickerName: {
       type: Boolean,
-      require: true
-    }
+      require: true,
+    },
   },
   emits: {
     "add-ticker": (value) => typeof value === "string" && value.length > 0,
-    "view-autocomlete": (value) => typeof value === "string" && value.length > 0
+    "view-autocomlete": (value) =>
+      typeof value === "string" && value.length > 0,
   },
 
   components: {
@@ -68,13 +69,13 @@ export default {
   },
   data() {
     return {
-      ticker: ""
+      ticker: "",
     };
   },
   methods: {
     add() {
-      if(this.disabled) {
-        return
+      if (this.disabled) {
+        return;
       }
       this.$emit("add-ticker", this.ticker);
       this.ticker = "";

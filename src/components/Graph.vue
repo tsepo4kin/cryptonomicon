@@ -44,6 +44,8 @@
   </section>
 </template>
 
+// в маунтед не работает метод, а просто строчка с расчетом работает отлично
+
 <script>
 export default {
   props: {
@@ -64,11 +66,14 @@ export default {
   },
 
   mounted() {
-    window.addEventListener("resize", this.calculateMaxGraphElements);
+    this.maxGraphElements = this.$refs.graph.clientWidth / 38;
+    window.addEventListener("resize", () => {
+      this.maxGraphElements = this.$refs.graph.clientWidth / 38;
+    });
   },
 
-  beforeOnmount() {
-    window.removeEventListener("resize", this.calculateMaxGraphElements);
+  beforeUnmount() {
+    window.removeEventListener("resize");
   },
 
   computed: {
@@ -96,13 +101,6 @@ export default {
     clearSelectedTicker() {
       this.$emit("clear-selected-ticker");
     },
-  },
-
-  calculateMaxGraphElements() {
-    if (!this.$refs.graph) {
-      return;
-    }
-    console.log(this.$refs.graph.clientWidth / 38);
   },
 };
 </script>

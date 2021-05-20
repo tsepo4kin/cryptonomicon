@@ -143,6 +143,7 @@ export default {
       loader: true,
     };
   },
+
   async created() {
     const windowData = Object.fromEntries(
       new URL(window.location).searchParams.entries()
